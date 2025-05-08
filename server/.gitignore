@@ -1,0 +1,16 @@
+# Node.js dependencies
+node_modules/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# dotenv environment files
+.env
+
+# OS-specific
+.DS_Store
+
+# Uploaded files (optional if you don't want to push uploads)
+uploads/
