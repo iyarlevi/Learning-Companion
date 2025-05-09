@@ -7,7 +7,8 @@ require("dotenv").config();
 
 const getEmbedding = require("./utils/openai");
 const parsePDF = require("./utils/pdfParser");
-const storeEmbedding = require("./utils/pinecone");
+const { storeEmbedding, queryPinecone } = require("./utils/pinecone");
+const generateAnswer = require("./utils/gptAnswer");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -57,18 +58,43 @@ app.post("/api/upload", upload.single("pdf"), async (req, res) => {
     const pdfPath = req.file.path;
     const pdfText = await parsePDF(pdfPath);
 
-    const chunk = pdfText.slice(0, 2000); // Shorten input
+    const chunk = pdfText.slice(0, 4000); // Shorten input
     const embedding = await getEmbedding(chunk);
 
-    await storeEmbedding(embedding, chunk, req.file.filename); // ✅ Store in Pinecone
+    await storeEmbedding(embedding, chunk, req.file.filename); // Store in Pinecone
 
     res.status(200).json({
       message: "File uploaded, embedded, and stored in Pinecone!",
-      preview: chunk.slice(0, 1000) + "...",
+      preview: chunk.slice(0, 4000) + "...",
     });
   } catch (err) {
     console.error("PDF Processing Error:", err);
     res.status(500).json({ message: "Error processing PDF" });
+  }
+});
+
+// GPT Answer
+app.post("/api/query", async (req, res) => {
+  const { question } = req.body;
+
+  if (!question) {
+    return res.status(400).json({ message: "Question is required" });
+  }
+
+  try {
+    const questionEmbedding = await getEmbedding(question);
+    const matches = await queryPinecone(questionEmbedding);
+
+    const answer = await generateAnswer(question, matches);
+
+    res.status(200).json({
+      message: "Answer generated",
+      answer,
+      matches,
+    });
+  } catch (err) {
+    console.error("Query Error:", err);
+    res.status(500).json({ message: "Error handling query" });
   }
 });
 
