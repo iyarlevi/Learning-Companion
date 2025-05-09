@@ -17,7 +17,7 @@ function UploadPDF() {
         body: formData,
       });
       const data = await res.json();
-      setMessage(data.message);
+      setMessage(`${data.message}\n\nPreview:\n${data.preview}`);
     } catch (err) {
       setMessage("Upload failed");
     }

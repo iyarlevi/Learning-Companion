@@ -2,7 +2,12 @@ const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
 require("dotenv").config();
+
+const getEmbedding = require("./utils/openai");
+const parsePDF = require("./utils/pdfParser");
+const storeEmbedding = require("./utils/pinecone");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -18,12 +23,11 @@ app.get("/api", (req, res) => {
   res.send("Backend is connected to Vite! 🧠");
 });
 
-// Create folder if not exists
-const fs = require("fs");
+// Create uploads folder if it doesn't exist
 const uploadPath = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath);
 
-// Storage setup
+// Multer storage config
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "uploads/");
@@ -44,11 +48,28 @@ const upload = multer({
 });
 
 // POST /api/upload
-app.post("/api/upload", upload.single("pdf"), (req, res) => {
-  if (!req.file) return res.status(400).json({ message: "No file uploaded" });
-  res
-    .status(200)
-    .json({ message: "File uploaded", filename: req.file.filename });
+app.post("/api/upload", upload.single("pdf"), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: "No file uploaded" });
+  }
+
+  try {
+    const pdfPath = req.file.path;
+    const pdfText = await parsePDF(pdfPath);
+
+    const chunk = pdfText.slice(0, 2000); // Shorten input
+    const embedding = await getEmbedding(chunk);
+
+    await storeEmbedding(embedding, chunk, req.file.filename); // ✅ Store in Pinecone
+
+    res.status(200).json({
+      message: "File uploaded, embedded, and stored in Pinecone!",
+      preview: chunk.slice(0, 1000) + "...",
+    });
+  } catch (err) {
+    console.error("PDF Processing Error:", err);
+    res.status(500).json({ message: "Error processing PDF" });
+  }
 });
 
 app.listen(PORT, () => {
