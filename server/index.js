@@ -5,7 +5,7 @@ const path = require("path");
 const fs = require("fs");
 require("dotenv").config();
 
-const getEmbedding = require("./utils/openai");
+const { openai, getEmbedding } = require("./utils/openai");
 const parsePDF = require("./utils/pdfParser");
 const { storeEmbedding, queryPinecone } = require("./utils/pinecone");
 const generateAnswer = require("./utils/gptAnswer");
@@ -95,6 +95,37 @@ app.post("/api/query", async (req, res) => {
   } catch (err) {
     console.error("Query Error:", err);
     res.status(500).json({ message: "Error handling query" });
+  }
+});
+
+// GPT Summary
+app.post("/api/summarize", async (req, res) => {
+  try {
+    const fakeQuestion = "summarize the uploaded document";
+    const fakeEmbedding = await getEmbedding(fakeQuestion);
+    const matches = await queryPinecone(fakeEmbedding);
+
+    const summaryPrompt = `
+You are a helpful assistant. Based on the following document chunks, create a short, clear, and conclusive summary:
+
+${matches.map((m) => m.text).join("\n\n")}
+
+Summary:
+`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        { role: "system", content: "You summarize documents." },
+        { role: "user", content: summaryPrompt },
+      ],
+    });
+
+    const summary = completion.choices[0].message.content;
+    res.status(200).json({ summary });
+  } catch (err) {
+    console.error("Summary Error:", err);
+    res.status(500).json({ message: "Failed to generate summary" });
   }
 });
 

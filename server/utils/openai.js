@@ -7,11 +7,14 @@ const openai = new OpenAI({
 
 const getEmbedding = async (text) => {
   const response = await openai.embeddings.create({
-    model: "text-embedding-3-small", // or 'text-embedding-ada-002' if preferred
+    model: "text-embedding-3-small",
     input: text,
   });
 
   return response.data[0].embedding;
 };
 
-module.exports = getEmbedding;
+module.exports = {
+  openai,
+  getEmbedding,
+};
