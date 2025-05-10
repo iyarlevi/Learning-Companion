@@ -25,19 +25,21 @@ const SummaryBox = () => {
 
   return (
     <div className="summary-box">
-      <h2>📄 Document Summary</h2>
-      <button onClick={handleSummarize} disabled={loading}>
-        {loading ? "Summarizing..." : "Summarize Document"}
-      </button>
+      <div className="summary-items">
+        <h2>📄 Document Summary</h2>
+        <button onClick={handleSummarize} disabled={loading}>
+          {loading ? "Summarizing..." : "Summarize Document"}
+        </button>
 
-      {error && <p className="error">{error}</p>}
+        {error && <p className="error">{error}</p>}
 
-      {summary && (
-        <div className="summary-output">
-          <h3>Summary:</h3>
-          <p>{summary}</p>
-        </div>
-      )}
+        {summary && (
+          <div className="summary-output">
+            <h3>Summary:</h3>
+            <p>{summary}</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

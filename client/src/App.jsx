@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import "./App.css";
 import UploadPDF from "./components/UploadPDF";
 import QueryForm from "./components/QueryForm";
