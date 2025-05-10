@@ -43,7 +43,8 @@ const upload = multer({
   storage,
   fileFilter: function (req, file, cb) {
     const ext = path.extname(file.originalname);
-    if (ext !== ".pdf") return cb(new Error("Only PDFs allowed"));
+    if (ext !== ".pdf" || ext !== ".PDF")
+      return cb(new Error("Only PDFs allowed"));
     cb(null, true);
   },
 });
